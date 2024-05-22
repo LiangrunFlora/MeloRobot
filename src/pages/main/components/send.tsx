@@ -1,5 +1,8 @@
+import get_message_response from "@/apis/ai_chat";
 import File from "@/components/file";
 import useCurrentMessages from "@/static/useCurrentMessages";
+import useUserInfo from "@/static/useUserInfo";
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 
 function Send() {
@@ -7,19 +10,44 @@ function Send() {
   const { messages, setMessages } = useCurrentMessages();
   const [wait, setWait] = useState(false);
 
+  const { userInfo } = useUserInfo();
   function sendMessage() {
+    console.log("发送请求");
+    const u_message = input;
+    setInput("");
     const oldMessages = messages;
     const new_message: MessageType = {
-      message: input,
+      message: u_message,
       time: new Date().toLocaleTimeString(),
       isUser: true,
     };
     oldMessages.push(new_message);
     setMessages(oldMessages);
-
+    // 调用发送请求，等待相应，相应后设置wait为false
+    getResponse({
+      message: u_message,
+      uid: userInfo.id,
+    });
     setWait(true);
-    //TODO 调用发送请求，等待相应，相应后设置wait为false
   }
+
+  const { mutate: getResponse } = useMutation({
+    mutationFn: get_message_response,
+    onSuccess: (result) => {
+      // 将消息加入到消息列表中，进行添加消息，并允许运行
+      const ai_response = result.data;
+      const oldMessages = messages;
+      const new_message = {
+        message: ai_response.message,
+        time: new Date().toLocaleTimeString(),
+        isUser: false,
+      };
+      oldMessages.push(new_message);
+      setMessages(oldMessages);
+      setWait(false);
+    },
+  });
+
   return (
     <div>
       <div className="flex h-10 w-[675px] items-center justify-between rounded-xl bg-stone-100">

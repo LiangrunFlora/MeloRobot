@@ -3,7 +3,6 @@ import useShowNotify from "@/static/useShowNotify";
 import Header from "@/pages/main/components/header";
 import Send from "@/pages/main/components/send";
 import Chat from "@/pages/main/components/chat";
-import useCurrentMessages from "@/static/useCurrentMessages";
 
 function Main() {
   const { showNotify } = useShowNotify();
@@ -19,7 +18,7 @@ function Main() {
           <div className="h-auto w-full">
             <Header />
           </div>
-          <div className="h-full w-full flex-grow">
+          <div className="h-full w-full flex-grow overflow-y-auto">
             <Chat />
           </div>
           <div className="flex h-auto w-full items-center justify-center">
