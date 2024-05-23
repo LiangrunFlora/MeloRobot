@@ -1,4 +1,4 @@
-const BASE = "http://localhost:5000";
+const BASE = "http://127.0.0.1:5000";
 
 export const APIS = {
   get_notify: `${BASE}/get_notify`,
@@ -9,4 +9,5 @@ export const APIS = {
   register: `${BASE}/register`,
   add_new_chat: `${BASE}/ai_chat`,
   add_new_draw_chat: `${BASE}/draws`,
+  summaryAISearch: `${BASE}/ai_search/summary`,
 };

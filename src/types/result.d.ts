@@ -40,3 +40,8 @@ declare interface AddNotifyResult {
   message: string;
   data: Notify;
 }
+declare interface SearchResult {
+  code:number;
+  message:string;
+  data: SearchType;
+}
