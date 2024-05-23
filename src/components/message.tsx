@@ -12,6 +12,7 @@ import ReactMarkdown from "react-markdown";
 import React from "react";
 import MessageRenderer from "./markdown";
 import Copy from "./copy";
+import toast from "react-hot-toast";
 
 interface ChatMessageProps {
   message: string;
@@ -57,6 +58,9 @@ function Message({
         console.log("Image copied to clipboard!");
       } else {
         await navigator.clipboard.writeText(message);
+        toast.success("复制成功", {
+          duration: 500,
+        });
         console.log("Message copied to clipboard!");
       }
     } catch (err) {

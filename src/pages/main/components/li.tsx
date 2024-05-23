@@ -10,6 +10,7 @@ import useCurrentModel from "@/static/useCurrentModel";
 import { useMutation } from "@tanstack/react-query";
 import { ReactNode } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 interface LiProps {
   children: ReactNode;
@@ -21,6 +22,7 @@ function Li({ children, id }: LiProps) {
   const { setMessages } = useCurrentMessages();
   const { setCurrentDetail } = useCurrentDetail();
   const { setAddNew } = useAddNew();
+  const navigate = useNavigate();
   const { mutate: getChatDetail } = useMutation({
     mutationFn: get_chat_detail,
     onSuccess: (result) => {
@@ -83,6 +85,7 @@ function Li({ children, id }: LiProps) {
   });
 
   function handleShowDetail(): void {
+    navigate("/");
     setCurrentDetail(id);
     setAddNew(false);
     if (currentModel === 1) {
@@ -92,18 +95,35 @@ function Li({ children, id }: LiProps) {
       getDrawDetail(id);
     }
   }
+  const { messages } = useCurrentMessages();
+
+  // 将 messages 复制到剪贴板的函数
+  const copyMessagesToClipboard = async () => {
+    try {
+      const messagesText = messages
+        .map((msg) => `${msg.isUser ? "User" : "AI"}: ${msg.message}`)
+        .join("\n\n");
+      await navigator.clipboard.writeText(messagesText);
+      toast.success("已复制到剪贴板", {
+        duration: 1000,
+      });
+    } catch (err) {
+      toast.error("复制失败");
+      console.error("Could not copy messages: ", err);
+    }
+  };
 
   return (
     <button
       className="flex items-center justify-between"
       onClick={() => handleShowDetail()}
     >
-      <div>{children}</div>
-      <details className="dropdown relative z-[1000]">
+      <div className="pl-4">{children}</div>
+      <details className="dropdown absolute z-50">
         <summary className=""></summary>
-        <ul className="menu dropdown-content z-[1000] w-auto rounded-box bg-base-100 p-2 text-xs shadow">
+        <ul className="menu dropdown-content absolute left-0 z-50 w-auto rounded-box bg-base-100 p-2 text-xs shadow">
           <li>
-            <div className="flex">
+            <div className="flex" onClick={() => copyMessagesToClipboard()}>
               <Share />
               <a className="text-nowrap">分享</a>
             </div>

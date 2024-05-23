@@ -4,26 +4,28 @@ import { useMutation } from "@tanstack/react-query";
 import getAISearch from "@/apis/AISearch/AISearch.tsx";
 import useSummaryMessages from "@/static/useSummaryMsg.tsx";
 import toast from "react-hot-toast";
+import useSearchLoading from "@/static/useSearchLoading";
 // import Search, { SearchProps } from "antd/es/input/Search";
 // import { AudioOutlined } from '@ant-design/icons';
-
 
 type HashParams = {
   [key: string]: string;
 };
 const SearchList = () => {
+  const { setLoading } = useSearchLoading();
+
   const { setSummaryMessages } = useSummaryMessages();
   const { mutate: getAISummary } = useMutation({
     mutationFn: getAISearch,
     onSuccess: (data) => {
-      toast.dismiss()
+      toast.dismiss();
       console.log(data.data);
+      setLoading(false);
       setSummaryMessages(data.data as SearchType);
-
     },
     onError: (error) => {
       console.log(error);
-    }
+    },
   });
 
   useEffect(() => {
@@ -41,7 +43,7 @@ const SearchList = () => {
       //手动解析参数
       const params: HashParams = {};
       const pairs = paramsString.split("&");
-      pairs.forEach(pair => {
+      pairs.forEach((pair) => {
         const [key, value] = pair.split("=");
         params[key] = decodeURIComponent(value || ""); // 解码值
       });
@@ -51,6 +53,10 @@ const SearchList = () => {
       if (gscQ) {
         const searchMsg = decodeURIComponent(gscQ);
         console.log(searchMsg);
+
+        // 设置loading状态
+        setLoading(true);
+        // 调用检索API
         getAISummary(searchMsg);
       }
     }
@@ -60,48 +66,6 @@ const SearchList = () => {
     };
   }, []);
 
-  // const suffix = (
-  //   <AudioOutlined
-  //     style={{
-  //       fontSize: 16,
-  //       color: '#1677ff',
-  //     }}
-  //   />
-  // );
-
-  // const onSearch: SearchProps["onSearch"] = async(
-  //   value) => {
-  //   // const newUrl = `http://localhost:3000/search/?q=${value}`;
-  //   // window.location.href = newUrl;
-  //   // try {
-  //   //   // 等待两个异步请求都完成
-  //   //   await Promise.all([
-  //   //     // 这里放第一个异步请求
-  //   //     getAISummary(value),
-  //   //     // 这里放第二个异步请求
-  //   //     // 如果有其他需要等待的异步请求，也可以放在这里
-  //   //   ]);
-  //   //   console.log('Both requests completed');
-  //   // } catch (error) {
-  //   //   console.error('Error occurred:', error);
-  //   // }
-  //   //
-  //   // console.log('Search term:', value);
-  //   try {
-  //     // 这里放第一个异步请求
-  //     await getAISummary(value);
-  //     console.log('First request completed');
-  //
-  //     // 更新 URL，导致页面重定向和重新加载
-  //     const newUrl = `http://localhost:3000/search/?q=${value}`;
-  //     window.location.href = newUrl;
-  //
-  //     console.log('Search term:', value);
-  //   } catch (error) {
-  //     console.error('Error occurred:', error);
-  //   }
-  // }
-  //
   return (
     <>
       <Box
@@ -109,12 +73,12 @@ const SearchList = () => {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          width: "60%"
+          width: "60%",
         }}
       >
         <Box
           sx={{
-            width: "80%" // 设置 div 的宽度
+            width: "80%", // 设置 div 的宽度
           }}
         >
           <div className="gcse-search"></div>

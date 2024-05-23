@@ -8,6 +8,8 @@ import useLogin from "@/static/useShowLogin";
 import useShowNotify from "@/static/useShowNotify";
 import useUserInfo from "@/static/useUserInfo";
 import { useState } from "react";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 function Header() {
   const { showNotify, setShowNotify } = useShowNotify();
@@ -16,6 +18,7 @@ function Header() {
   const { setCurrentModel, currentModel } = useCurrentModel();
   const { setMessages } = useCurrentMessages();
   const { userInfo } = useUserInfo();
+  const navigate = useNavigate();
   const { setLogin } = useLogin();
   function handleHeadBtn(): void {
     if (userInfo.id === 1) {
@@ -29,6 +32,24 @@ function Header() {
     setAddNew(true);
     setMessages([]);
   }
+
+  const { messages } = useCurrentMessages();
+
+  // 将 messages 复制到剪贴板的函数
+  const copyMessagesToClipboard = async () => {
+    try {
+      const messagesText = messages
+        .map((msg) => `${msg.isUser ? "User" : "AI"}: ${msg.message}`)
+        .join("\n\n");
+      await navigator.clipboard.writeText(messagesText);
+      toast.success("已复制到剪贴板", {
+        duration: 1000,
+      });
+    } catch (err) {
+      toast.error("复制失败");
+      console.error("Could not copy messages: ", err);
+    }
+  };
 
   return (
     <div className="h-auto w-full px-4">
@@ -74,7 +95,29 @@ function Header() {
           </details>
         </div>
         <div className="flex items-center space-x-4">
-          <button>
+          <button
+            className="btn btn-circle btn-ghost btn-md"
+            onClick={() => navigate("/search")}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </button>
+          <button
+            className="btn btn-circle btn-ghost btn-md"
+            onClick={() => copyMessagesToClipboard()}
+          >
             <Share />
           </button>
           <button onClick={() => handleHeadBtn()}>

@@ -7,6 +7,7 @@ import Login from "@/pages/login/login";
 import useLogin from "@/static/useShowLogin";
 import useRegister from "@/static/useShowRegister";
 import Register from "@/pages/register/register";
+import { Outlet } from "react-router-dom";
 
 function Main() {
   const { showNotify } = useShowNotify();
@@ -27,7 +28,8 @@ function Main() {
             <Header />
           </div>
           <div className="h-full w-full flex-grow overflow-y-auto">
-            <Chat />
+            {/* <Chat /> */}
+            <Outlet />
           </div>
           <div className="flex h-auto w-full items-center justify-center">
             <Send />
