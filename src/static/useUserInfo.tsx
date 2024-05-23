@@ -7,7 +7,7 @@ interface UseUserInfoProps {
 
 const useUserInfo = create<UseUserInfoProps>((set) => ({
   userInfo: {
-    id: -1,
+    id: 1,
     account: "",
     username: "",
     email: "",

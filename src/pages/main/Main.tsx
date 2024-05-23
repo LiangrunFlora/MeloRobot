@@ -3,11 +3,19 @@ import useShowNotify from "@/static/useShowNotify";
 import Header from "@/pages/main/components/header";
 import Send from "@/pages/main/components/send";
 import Chat from "@/pages/main/components/chat";
+import Login from "@/pages/login/login";
+import useLogin from "@/static/useShowLogin";
+import useRegister from "@/static/useShowRegister";
+import Register from "@/pages/register/register";
 
 function Main() {
   const { showNotify } = useShowNotify();
+  const { login } = useLogin();
+  const { register } = useRegister();
   return (
     <div>
+      {login && <Login />}
+      {register && <Register />}
       <div className="flex h-screen w-screen">
         <Drawer />
         <div

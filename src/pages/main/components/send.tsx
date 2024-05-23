@@ -1,6 +1,12 @@
-import get_message_response from "@/apis/ai_chat";
+import add_new_chat, { add_new_draw_chat } from "@/apis/add_new_chat";
+import get_message_response, { get_DrawAI_response } from "@/apis/ai_chat";
 import File from "@/components/file";
+import useAddNew from "@/static/useAddNew";
+import useCurrentDetail from "@/static/useCurrentDetail";
 import useCurrentMessages from "@/static/useCurrentMessages";
+import useCurrentModel from "@/static/useCurrentModel";
+import useNotifyList from "@/static/useNotifyList";
+import useSelectFile from "@/static/useSelectFile";
 import useUserInfo from "@/static/useUserInfo";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
@@ -9,27 +15,13 @@ function Send() {
   const [input, setInput] = useState("");
   const { messages, setMessages } = useCurrentMessages();
   const [wait, setWait] = useState(false);
-
+  const { currentDetail, setCurrentDetail } = useCurrentDetail();
+  const [abortController, setAbortController] = useState(new AbortController());
   const { userInfo } = useUserInfo();
-  function sendMessage() {
-    console.log("发送请求");
-    const u_message = input;
-    setInput("");
-    const oldMessages = messages;
-    const new_message: MessageType = {
-      message: u_message,
-      time: new Date().toLocaleTimeString(),
-      isUser: true,
-    };
-    oldMessages.push(new_message);
-    setMessages(oldMessages);
-    // 调用发送请求，等待相应，相应后设置wait为false
-    getResponse({
-      message: u_message,
-      uid: userInfo.id,
-    });
-    setWait(true);
-  }
+  const { addNew, setAddNew } = useAddNew();
+  const { notifyList, setNotifyList } = useNotifyList();
+  const { currentModel } = useCurrentModel();
+  const { selectFile, setSelectFile } = useSelectFile();
 
   const { mutate: getResponse } = useMutation({
     mutationFn: get_message_response,
@@ -45,8 +37,221 @@ function Send() {
       oldMessages.push(new_message);
       setMessages(oldMessages);
       setWait(false);
+      setSelectFile("");
+      setAddNew(false);
     },
   });
+
+  const { mutate: getDrawAIResponse } = useMutation({
+    mutationFn: get_DrawAI_response,
+    onSuccess: (result) => {
+      // 将消息加入到消息列表中，进行添加消息，并允许运行
+      const ai_response = result.data;
+      const oldMessages = messages;
+      oldMessages.pop();
+      const new_message: MessageType = {
+        message: ai_response.message,
+        time: new Date().toLocaleTimeString(),
+        isUser: false,
+        message_type: ai_response.message_type,
+        extension: ai_response.extension,
+      };
+      oldMessages.push(new_message);
+      setMessages(oldMessages);
+      setWait(false);
+      setAddNew(false);
+    },
+  });
+
+  const { mutate: addNewDrawChat } = useMutation({
+    mutationFn: add_new_draw_chat,
+    onSuccess: (result) => {
+      const new_notify = result.data;
+      setCurrentDetail(new_notify.id);
+      const old_notify_list = [
+        {
+          id: new_notify.id,
+          title: new_notify.title,
+          uid: new_notify.uid,
+        },
+        ...notifyList,
+      ];
+      setNotifyList(old_notify_list);
+      setWait(true);
+      const u_message = input;
+      setInput("");
+      const oldMessages = messages;
+      const new_message: MessageType = {
+        message: u_message,
+        time: new Date().toLocaleTimeString(),
+        isUser: true,
+        message_type: selectFile === "" ? 0 : 1,
+        extension: selectFile,
+      };
+      oldMessages.push(new_message);
+      setMessages(oldMessages);
+      const new_message_ai = {
+        message: "正在生成图片... 0%",
+        time: new Date().toLocaleTimeString(),
+        isUser: false,
+      };
+      oldMessages.push(new_message_ai);
+      setMessages(oldMessages);
+      let progress = 0;
+      getDrawAIResponse({
+        uid: userInfo.id,
+        text: u_message,
+        dialog_id: currentDetail,
+      });
+      const interval = setInterval(() => {
+        progress += 1;
+        if (progress > 100) {
+          clearInterval(interval);
+          return;
+        }
+        const updatedMessages = [...oldMessages];
+        updatedMessages[updatedMessages.length - 1].message =
+          `正在生成图片... ${progress}%`;
+        setMessages(updatedMessages);
+      }, 120); // 每 0.8 秒更新一次，8 秒内达到 100%
+    },
+  });
+
+  const { mutate: addNewChat } = useMutation({
+    mutationFn: add_new_chat,
+    onSuccess: (result) => {
+      const new_notify = result.data;
+      setCurrentDetail(new_notify.id);
+      const old_notify_list = [
+        {
+          id: new_notify.id,
+          title: new_notify.title,
+          uid: new_notify.uid,
+        },
+        ...notifyList,
+      ];
+      setNotifyList(old_notify_list);
+      setWait(true);
+      const newAbortController = new AbortController();
+      setAbortController(newAbortController);
+      console.log("发送请求");
+      const u_message = input;
+      setInput("");
+      const oldMessages = messages;
+      const new_message: MessageType = {
+        message: u_message,
+        time: new Date().toLocaleTimeString(),
+        isUser: true,
+        message_type: selectFile === "" ? 0 : 1,
+        extension: selectFile,
+      };
+      oldMessages.push(new_message);
+      setMessages(oldMessages);
+      // 调用发送请求，等待相应，相应后设置wait为false
+      getResponse({
+        message: u_message,
+        uid: userInfo.id,
+        detail_id: new_notify.id,
+        imageBase64: selectFile,
+        // TODO 检查问题
+        onMessageReceived: (chunk: string) => {
+          const oldMessages = [...messages];
+          const new_message = {
+            message: chunk,
+            time: new Date().toLocaleTimeString(),
+            isUser: false,
+          };
+          oldMessages.push(new_message);
+          setMessages(oldMessages);
+        },
+        setWait: setWait,
+        signal: newAbortController.signal,
+      });
+    },
+  });
+
+  function sendMessage() {
+    if (wait) {
+      // 打断当前请求
+      abortController.abort();
+      setWait(false);
+      return;
+    }
+    if (addNew) {
+      // 首先建立新的title
+      if (currentModel === 1) addNewChat({ uid: userInfo.id, title: input });
+      else if (currentModel === 2)
+        addNewDrawChat({ uid: userInfo.id, title: input });
+    } else {
+      setWait(true);
+      const newAbortController = new AbortController();
+      setAbortController(newAbortController);
+      console.log("发送请求");
+      const u_message = input;
+      setInput("");
+      const oldMessages = messages;
+      const new_message: MessageType = {
+        message: u_message,
+        time: new Date().toLocaleTimeString(),
+        isUser: true,
+        message_type: selectFile === "" ? 0 : 1,
+        extension: selectFile,
+      };
+      oldMessages.push(new_message);
+      setMessages(oldMessages);
+      // 调用发送请求，等待相应，相应后设置wait为false
+      if (currentModel === 1) {
+        getResponse({
+          message: u_message,
+          uid: userInfo.id,
+          detail_id: currentDetail,
+          imageBase64: selectFile,
+          // TODO 检查问题
+          onMessageReceived: (chunk: string) => {
+            const oldMessages = [...messages];
+            const new_message = {
+              message: chunk,
+              time: new Date().toLocaleTimeString(),
+              isUser: false,
+            };
+            oldMessages.push(new_message);
+            setMessages(oldMessages);
+          },
+          setWait: setWait,
+          signal: newAbortController.signal,
+        });
+      } else if (currentModel === 2) {
+        const oldMessages = [...messages];
+        const new_message = {
+          message: "正在生成图片... 0%",
+          time: new Date().toLocaleTimeString(),
+          isUser: false,
+        };
+        oldMessages.push(new_message);
+        setMessages(oldMessages);
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += 1;
+          if (progress > 100) {
+            clearInterval(interval);
+            return;
+          }
+          const updatedMessages = [...oldMessages];
+          updatedMessages[updatedMessages.length - 1].message =
+            `正在生成图片... ${progress}%`;
+          setMessages(updatedMessages);
+        }, 120); // 每 0.8 秒更新一次，8 秒内达到 100%
+        getDrawAIResponse({
+          uid: userInfo.id,
+          text: input,
+          dialog_id: currentDetail,
+        });
+      }
+    }
+    setWait(false);
+    setSelectFile("");
+    setAddNew(false);
+  }
 
   return (
     <div>
@@ -63,7 +268,7 @@ function Send() {
         <div className="flex h-full w-auto items-center">
           <button
             className="disabled:dark:bg-token-text-quaternary dark:disabled:text-token-main-surface-secondary mb-1 mr-1 flex h-8 w-8 items-center justify-center rounded-full bg-black text-white transition-colors hover:opacity-70 focus-visible:outline-none focus-visible:outline-black disabled:bg-[#D7D7D7] disabled:text-[#f4f4f4] disabled:hover:opacity-100 dark:bg-white dark:text-black dark:focus-visible:outline-white"
-            disabled={input === ""}
+            disabled={!wait && input === ""}
             onClick={() => sendMessage()}
           >
             {wait ? (

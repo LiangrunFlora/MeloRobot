@@ -18,6 +18,8 @@ function Chat() {
             message={message.message}
             time={message.time}
             isUser={message.isUser}
+            message_type={message.message_type}
+            extension={message.extension}
           />
         ))}
       </div>
