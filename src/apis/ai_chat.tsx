@@ -5,6 +5,7 @@ interface Input {
   uid: number;
   detail_id: number;
   imageBase64?: string;
+  language?: string;
 }
 
 export default async function get_message_response({
@@ -15,6 +16,7 @@ export default async function get_message_response({
   setWait,
   signal,
   imageBase64 = "",
+  language = "简体中文",
 }: Input & {
   onMessageReceived: (chunk: string) => void;
 } & {
@@ -27,6 +29,7 @@ export default async function get_message_response({
     image: imageBase64,
     detail_id: detail_id,
     uid: uid,
+    language: language,
   };
 
   const response = await fetch(APIS.chat_add_message, {

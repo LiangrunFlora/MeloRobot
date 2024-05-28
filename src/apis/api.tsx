@@ -10,4 +10,5 @@ export const APIS = {
   add_new_chat: `${BASE}/ai_chat`,
   add_new_draw_chat: `${BASE}/draws`,
   summaryAISearch: `${BASE}/ai_search/summary`,
+  get_weather_info: `${BASE}/weather/weather_details`,
 };

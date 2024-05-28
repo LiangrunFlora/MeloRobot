@@ -1,5 +1,6 @@
 import add_new_chat, { add_new_draw_chat } from "@/apis/add_new_chat";
 import get_message_response, { get_DrawAI_response } from "@/apis/ai_chat";
+import get_weather_info from "@/apis/get_weather_info";
 import File from "@/components/file";
 import useAddNew from "@/static/useAddNew";
 import useCurrentDetail from "@/static/useCurrentDetail";
@@ -22,6 +23,7 @@ function Send() {
   const { notifyList, setNotifyList } = useNotifyList();
   const { currentModel } = useCurrentModel();
   const { selectFile, setSelectFile } = useSelectFile();
+  const [languange, setLanguage] = useState<string>("简体中文");
 
   const { mutate: getResponse } = useMutation({
     mutationFn: get_message_response,
@@ -101,11 +103,11 @@ function Send() {
       getDrawAIResponse({
         uid: userInfo.id,
         text: u_message,
-        dialog_id: currentDetail,
+        dialog_id: new_notify.id,
       });
       const interval = setInterval(() => {
         progress += 1;
-        if (progress > 100) {
+        if (progress > 99) {
           clearInterval(interval);
           return;
         }
@@ -169,6 +171,28 @@ function Send() {
       });
     },
   });
+  function containsWeather(text: string) {
+    // 使用正则表达式来检测是否包含"天气"
+    const regex = /天气/;
+    return regex.test(text);
+  }
+
+  const { mutate: getWeatherInfo } = useMutation({
+    mutationFn: get_weather_info,
+    onSuccess: (result) => {
+      const weather_info = result.data.weather_info;
+      const oldMessages = messages;
+      const new_message: MessageType = {
+        message: weather_info,
+        time: new Date().toLocaleTimeString(),
+        isUser: false,
+      };
+      oldMessages.push(new_message);
+      setMessages(oldMessages);
+      setWait(false);
+      setAddNew(false);
+    },
+  });
 
   function sendMessage() {
     if (wait) {
@@ -201,11 +225,17 @@ function Send() {
       setMessages(oldMessages);
       // 调用发送请求，等待相应，相应后设置wait为false
       if (currentModel === 1) {
+        if (containsWeather(u_message)) {
+          // 调用天气API
+          getWeatherInfo();
+          return;
+        }
         getResponse({
           message: u_message,
           uid: userInfo.id,
           detail_id: currentDetail,
           imageBase64: selectFile,
+          language: languange,
           // TODO 检查问题
           onMessageReceived: (chunk: string) => {
             const oldMessages = [...messages];
@@ -232,7 +262,7 @@ function Send() {
         let progress = 0;
         const interval = setInterval(() => {
           progress += 1;
-          if (progress > 100) {
+          if (progress > 99) {
             clearInterval(interval);
             return;
           }
@@ -254,7 +284,23 @@ function Send() {
   }
 
   return (
-    <div>
+    <div className="flex flex-col">
+      <div className="flex items-center">
+        <span className="text-sm ">回复语言: </span>
+        <div className="x-12 y-16">
+          <select
+            className="max-h-xs select w-full max-w-xs select-none focus:outline-none"
+            value={languange}
+            onChange={(e) => {
+              console.log(e.target.value);
+              setLanguage(e.target.value);
+            }}
+          >
+            <option selected>简体中文</option>
+            <option>English</option>
+          </select>
+        </div>
+      </div>
       <div className="flex h-10 w-[675px] items-center justify-between rounded-xl bg-stone-100">
         <div className="flex h-full w-full items-center space-x-1">
           <File />

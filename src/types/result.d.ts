@@ -28,7 +28,6 @@ declare interface DrawNotifyResult {
   data: DrawNotifyType[];
 }
 
-
 declare interface ChatDetailResult {
   code: number;
   message: string;
@@ -41,7 +40,14 @@ declare interface AddNotifyResult {
   data: Notify;
 }
 declare interface SearchResult {
-  code:number;
-  message:string;
+  code: number;
+  message: string;
   data: SearchType;
+}
+declare interface WeatehrResult {
+  code: number;
+  message: string;
+  data: {
+    weather_info: string;
+  };
 }
