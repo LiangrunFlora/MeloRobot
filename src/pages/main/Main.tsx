@@ -2,7 +2,6 @@ import Drawer from "@/pages/main/components/Drawer";
 import useShowNotify from "@/static/useShowNotify";
 import Header from "@/pages/main/components/header";
 import Send from "@/pages/main/components/send";
-import Chat from "@/pages/main/components/chat";
 import Login from "@/pages/login/login";
 import useLogin from "@/static/useShowLogin";
 import useRegister from "@/static/useShowRegister";
@@ -28,7 +27,6 @@ function Main() {
             <Header />
           </div>
           <div className="h-full w-full flex-grow overflow-y-auto">
-            {/* <Chat /> */}
             <Outlet />
           </div>
           <div className="flex h-auto w-full items-center justify-center">

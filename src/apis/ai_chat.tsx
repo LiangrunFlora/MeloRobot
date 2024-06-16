@@ -1,3 +1,4 @@
+/* eslint-disable no-constant-condition */
 import { APIS } from "@/apis/api";
 
 interface Input {
@@ -7,6 +8,7 @@ interface Input {
   imageBase64?: string;
   language?: string;
 }
+
 
 export default async function get_message_response({
   message,
