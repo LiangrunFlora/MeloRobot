@@ -1,5 +1,7 @@
 # React + TypeScript + Vite
 
+## 注意: MeloRobot后端必须将模型部署到本机电脑中才可使用!!! 使用 Ollama 一键将llama3大语言模型部署到本机中
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
